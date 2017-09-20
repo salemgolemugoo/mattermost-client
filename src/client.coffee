@@ -45,10 +45,10 @@ class Client extends EventEmitter
     login: ->
         @logger.info 'Logging in...'
 
-        if process.env.MATTERMOST_TOKEN
-            @_apiCall 'GET', usersRoute + '/tokens/' + process.env.MATTERMOST_TOKEN, null, @_onLogin
-        else
+        if @password
             @_apiCall 'POST', usersRoute + '/login', {login_id: @email, password: @password}, @_onLogin
+        else
+            @_apiCall 'GET', usersRoute + '/tokens/' + @email, null, @_onLogin
 
     _onLogin: (data, headers) =>
         if data
@@ -60,7 +60,7 @@ class Client extends EventEmitter
             else
                 @authenticated = true
                 # Continue happy flow here
-                @token = if process.env.MATTERMOST_TOKEN? then process.env.MATTERMOST_TOKEN else headers.token
+                @token = if not @password? then @email else headers.token
                 @socketUrl = (if useTLS then 'wss://' else 'ws://') + @host + (if (useTLS and @options.wssPort?) then ':'+@options.wssPort else '') + '/api/v4/websocket'
                 @logger.info 'Websocket URL: ' + @socketUrl
                 @self = new User data
